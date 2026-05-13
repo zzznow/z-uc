@@ -1,0 +1,61 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: z-uc-route
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: gw
+      sectionName: web
+  hostnames:
+    - "uc.jsesp.cn"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /register
+      backendRefs:
+        - name: z-uc-auth
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /user-info
+      backendRefs:
+        - name: z-uc-auth
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /internal/user-info
+      backendRefs:
+        - name: z-uc-auth
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /login
+      backendRefs:
+        - name: z-uc-auth
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /token
+      backendRefs:
+        - name: z-uc-auth
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /auth
+      backendRefs:
+        - name: z-uc-auth
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /html
+      backendRefs:
+        - name: z-uc-web
+          port: 80

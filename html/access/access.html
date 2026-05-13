@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Authorize</title>
+<link rel="stylesheet" href="/html/common.css">
+</head>
+<body>
+<div class="container">
+  <div class="card" id="content">
+    <div class="spinner"></div>
+    <p style="text-align:center;color:var(--text-secondary);margin-top:12px;">Processing...</p>
+  </div>
+</div>
+
+<script src="/html/common.js"></script>
+<script>
+(function () {
+  var token = getToken();
+  var code = getQuery('code');
+  var state = getQuery('state');
+  var redirectUri = getQuery('redirect_uri');
+  var provider = getQuery('provider');
+  var sn = getQuery('sn') || localStorage.getItem('x-sn');
+
+  if (code && provider) {
+    var apiBase = localStorage.getItem('x-api-auth') || 'http://localhost:4463';
+    var savedState = sessionStorage.getItem('oauth-state') || state;
+    var savedRedirectUri = sessionStorage.getItem('oauth-redirect-uri') || '';
+
+    var body = { code: code, state: savedState, redirectUri: savedRedirectUri };
+    var endpoint = '';
+    if (provider === 'google') endpoint = apiBase + '/auth/google/token';
+    else if (provider === 'wx') endpoint = apiBase + '/auth/wx/token';
+
+    if (!endpoint) {
+      cleanupAndShow('Unknown provider.<br><a href="/signin/login.html" style="color:var(--primary)">Sign In</a>');
+      return;
+    }
+
+    postJSON(endpoint, body).then(function (res) {
+      if (res.data) {
+        saveToken(res.data);
+        sessionStorage.removeItem('oauth-state');
+        sessionStorage.removeItem('oauth-redirect-uri');
+        renderAuthorize();
+      } else {
+        cleanupAndShow('Third-party login failed: ' + (res.error || '') +
+          '<br><a href="/signin/login.html" style="color:var(--primary)">Try another method</a>');
+      }
+    }).catch(function () {
+      cleanupAndShow('Network error.<br><a href="/signin/login.html" style="color:var(--primary)">Retry</a>');
+    });
+    return;
+  }
+
+  if (token) {
+    renderAuthorize();
+  } else {
+    cleanupAndShow('No authorization request.<br><a href="/signin/login.html" style="color:var(--primary)">Sign In</a>');
+  }
+
+  function renderAuthorize() {
+    var apiBase = localStorage.getItem('x-api-auth') || 'http://localhost:4463';
+    if (!token) {
+      cleanupAndShow('No login session found.<br><a href="/signin/login.html" style="color:var(--primary)">Go to Sign In</a>');
+      return;
+    }
+
+    fetch(apiBase + '/auth/info', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (!res.data) {
+        cleanupAndShow('Session expired.<br><a href="/signin/login.html" style="color:var(--primary)">Sign In again</a>');
+        localStorage.clear();
+        return;
+      }
+
+      var user = res.data;
+      var appName = getQuery('appName') || 'Application';
+      var avatarHtml = user.icon
+        ? '<img src="' + escapeHtml(user.icon) + '" alt="">'
+        : (user.nickName || user.name || 'U')[0].toUpperCase();
+
+      document.getElementById('content').innerHTML =
+        '<div class="avatar">' + avatarHtml + '</div>' +
+        '<div class="auth-info">' +
+        '  <div class="nickname">' + escapeHtml(user.nickName || user.name) + '</div>' +
+        '  <div class="app-name">' + escapeHtml(appName) + ' requests authorization</div>' +
+        '</div>' +
+        '<button class="btn btn-primary" id="authorize-btn">Authorize</button>' +
+        '<button class="btn" style="margin-top:12px;background:#f5f5f5;color:var(--text-secondary);" onclick="localStorage.clear();sessionStorage.clear();location.reload()">Switch Account</button>';
+
+      document.getElementById('authorize-btn').addEventListener('click', function () {
+        var btn = this;
+        setLoading(btn, true);
+        fetch(apiBase + '/auth/token/verify', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        }).then(function (r) { return r.json(); }).then(function (info) {
+          if (info.data) {
+            if (redirectUri) {
+              location.replace(redirectUri + '?access_token=' + encodeURIComponent(token) + '&sn=' + encodeURIComponent(sn));
+            } else {
+              showToast('Authorization successful');
+              if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'auth_success', token: token, sn: sn }, '*');
+              }
+            }
+          } else {
+            showToast('Token expired, please sign in again');
+            localStorage.clear();
+            setTimeout(function () { location.href = '/signin/login.html'; }, 1000);
+          }
+        }).catch(function () {
+          showToast('Authorization failed');
+        }).finally(function () {
+          setLoading(btn, false);
+        });
+      });
+    }).catch(function () {
+      cleanupAndShow('Network error.<br><a href="/signin/login.html" style="color:var(--primary)">Retry</a>');
+    });
+  }
+
+  function cleanupAndShow(html) {
+    document.getElementById('content').innerHTML =
+      '<div style="text-align:center;padding:40px 0;">' +
+      '<p style="font-size:15px;color:var(--text-secondary);line-height:1.8;">' + html + '</p>' +
+      '</div>';
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+})();
+</script>
+</body>
+</html>

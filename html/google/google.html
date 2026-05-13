@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google Sign In</title>
+<link rel="stylesheet" href="/html/common.css">
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="card-title">Google Sign In</div>
+    <div class="spinner" id="loading"></div>
+    <p id="status" style="text-align:center;color:var(--text-secondary);margin-top:12px;">Connecting to Google...</p>
+  </div>
+</div>
+
+<script src="/html/common.js"></script>
+<script>
+(function () {
+  var clientId = '639772744432-k42vv0st4j1960rh6qbobl2iat6srn4a.apps.googleusercontent.com';
+  var redirectUri = location.origin + '/access/access.html?provider=google';
+  var scope = 'openid email profile';
+
+  fetchState().then(function (state) {
+    if (!state) {
+      document.getElementById('status').textContent = 'Failed to initialize, please try again';
+      document.getElementById('loading').style.display = 'none';
+      return;
+    }
+    sessionStorage.setItem('oauth-state', state);
+    sessionStorage.setItem('oauth-redirect-uri', redirectUri);
+
+    var authUrl = 'https://accounts.google.com/o/oauth2/v2/auth' +
+      '?client_id=' + encodeURIComponent(clientId) +
+      '&redirect_uri=' + encodeURIComponent(redirectUri) +
+      '&response_type=code' +
+      '&scope=' + encodeURIComponent(scope) +
+      '&state=' + encodeURIComponent(state) +
+      '&access_type=offline' +
+      '&prompt=consent';
+
+    document.getElementById('status').textContent = 'Redirecting to Google...';
+    setTimeout(function () { location.replace(authUrl); }, 500);
+  }).catch(function () {
+    document.getElementById('status').textContent = 'Network error, please try again';
+    document.getElementById('loading').style.display = 'none';
+  });
+})();
+</script>
+</body>
+</html>

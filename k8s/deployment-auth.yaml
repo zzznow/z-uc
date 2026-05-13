@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: z-uc-auth
+  labels:
+    app: z-uc-auth
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: z-uc-auth
+  template:
+    metadata:
+      labels:
+        app: z-uc-auth
+    spec:
+      containers:
+        - name: auth
+          image: registry.example.com/z-uc/auth:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: APP_ENV
+              value: "prod"
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: z-uc-secrets
+                  key: mysql-user
+            - name: MYSQL_PASSWD
+              valueFrom:
+                secretKeyRef:
+                  name: z-uc-secrets
+                  key: mysql-passwd
+            - name: MYSQL_DB
+              valueFrom:
+                secretKeyRef:
+                  name: z-uc-secrets
+                  key: mysql-dbname
+            - name: REDIS_PASSWD
+              valueFrom:
+                secretKeyRef:
+                  name: z-uc-secrets
+                  key: redis-passwd
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: z-uc-secrets
+                  key: jwt-secret
+          volumeMounts:
+            - name: config
+              mountPath: /app/config/application-prod.yml
+              subPath: application-prod.yml
+            - name: apps-config
+              mountPath: /app/config/apps.yml
+              subPath: apps.yml
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: z-uc-auth-config
+        - name: apps-config
+          configMap:
+            name: z-uc-auth-apps
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: z-uc-auth
+spec:
+  selector:
+    app: z-uc-auth
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

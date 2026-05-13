@@ -1,0 +1,5 @@
+apps:
+  - id: "mini-app-example"
+    token_url: "http://mini-app-example.svc.cluster.local:8080/internal/token/generate"
+  - id: "mini-app-shop"
+    token_url: "http://mini-app-shop.svc.cluster.local:8080/internal/token/generate"

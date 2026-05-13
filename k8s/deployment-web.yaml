@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: z-uc-web
+  labels:
+    app: z-uc-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: z-uc-web
+  template:
+    metadata:
+      labels:
+        app: z-uc-web
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /signin/login.html
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 10
+      volumes:
+        - name: html
+          configMap:
+            name: z-uc-web-html
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: z-uc-web
+spec:
+  selector:
+    app: z-uc-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

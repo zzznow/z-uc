@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Approval</title>
+<link rel="stylesheet" href="/html/common.css">
+<style>
+  .order-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+  .order-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+  .order-row .lbl { color: var(--text-secondary); }
+  .order-row .val { font-weight: 500; }
+  .order-divider { border-top: 1px dashed var(--border); margin: 10px 0; }
+  .order-amount { font-size: 22px; font-weight: 700; text-align: right; margin-top: 6px; }
+  .tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .tab {
+    flex: 1; text-align: center; padding: 12px 0; font-size: 15px;
+    color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent;
+  }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 500; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .result-icon {
+    width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .result-icon.success { background: #52c41a; }
+  .result-icon.fail { background: var(--error); }
+  .result-icon svg { width: 32px; height: 32px; fill: #fff; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="card" style="max-width:440px;">
+
+    <!-- 订单信息（无论登录与否都展示） -->
+    <div class="order-card" id="order-info">
+      <div class="spinner" style="margin:12px auto;"></div>
+      <p style="text-align:center;color:var(--text-secondary);font-size:13px;">Loading order...</p>
+    </div>
+
+    <!-- 未登录：登录/注册 -->
+    <div id="auth-section" style="display:none;">
+      <div class="tabs">
+        <div class="tab active" data-tab="login">Sign In</div>
+        <div class="tab" data-tab="signup">Sign Up</div>
+      </div>
+      <div class="tab-content active" id="tab-login">
+        <div class="form-group">
+          <label>Account</label>
+          <input class="form-input" type="text" id="login-name" placeholder="Username / Email / Phone">
+          <div class="form-error" id="login-error"></div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input class="form-input" type="password" id="login-pass" placeholder="Password">
+        </div>
+        <button class="btn btn-primary" id="login-btn">Sign In</button>
+      </div>
+      <div class="tab-content" id="tab-signup">
+        <div class="form-group">
+          <label>Username</label>
+          <input class="form-input" type="text" id="signup-name" placeholder="Choose a username">
+          <div class="form-error" id="signup-error"></div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input class="form-input" type="password" id="signup-pass" placeholder="6+ characters">
+        </div>
+        <div class="form-group">
+          <label>Email (optional)</label>
+          <input class="form-input" type="email" id="signup-email" placeholder="For receipt">
+        </div>
+        <button class="btn btn-primary" id="signup-btn">Sign Up</button>
+      </div>
+    </div>
+
+    <!-- 已登录：审批按钮 -->
+    <div id="approve-section" style="display:none;">
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Logged in as</div>
+      <div id="logged-user" style="font-weight:500;margin-bottom:20px;"></div>
+      <button class="btn btn-primary" id="approve-btn">Approve Order</button>
+      <button class="btn" style="margin-top:10px;background:#f5f5f5;color:var(--text-secondary);" id="reject-btn">Reject</button>
+      <p style="text-align:center;font-size:12px;color:var(--text-secondary);margin-top:12px;">
+        <a href="#" id="switch-link" style="color:var(--primary);">Switch account</a>
+      </p>
+    </div>
+
+    <!-- 结果 -->
+    <div id="result-section" style="display:none;text-align:center;padding:20px 0;">
+      <div class="result-icon success" id="result-icon-success" style="display:none;">
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      </div>
+      <div class="result-icon fail" id="result-icon-fail" style="display:none;">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </div>
+      <p id="result-msg" style="font-size:16px;font-weight:500;"></p>
+      <p id="result-sub" style="color:var(--text-secondary);font-size:13px;margin-top:4px;"></p>
+    </div>
+
+  </div>
+</div>
+
+<script src="/html/common.js"></script>
+<script>
+(function () {
+  var orderId = getQuery('id');
+  var loginUrl = getQuery('login_api') || 'http://localhost:4462/login';
+  var registerUrl = getQuery('register_api') || 'http://localhost:4461/register';
+  var orderApiBase = getQuery('order_api') || 'http://localhost:4470';
+
+  var currentOrder, currentToken, currentSn;
+
+  // 1. 加载订单
+  fetch(orderApiBase + '/internal/order/' + orderId)
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (!res.data) { showError('Order not found'); return; }
+      currentOrder = res.data;
+      renderOrder(currentOrder);
+
+      currentToken = getToken();
+      if (currentToken) {
+        verifyIdentityAndShowApprove();
+      } else {
+        showAuth();
+      }
+    })
+    .catch(function () { showError('Failed to load order'); });
+
+  function renderOrder(order) {
+    var statusLabel = { pending: 'Pending Approval', approved: 'Approved', rejected: 'Rejected', completed: 'Completed' };
+    document.getElementById('order-info').innerHTML =
+      '<div class="order-row"><span class="lbl">Order ID</span><span class="val">' + escapeHtml(order.id || orderId) + '</span></div>' +
+      '<div class="order-row"><span class="lbl">Buyer</span><span class="val">' + escapeHtml(order.buyerName || 'Player') + '</span></div>' +
+      '<div class="order-row"><span class="lbl">Product</span><span class="val">' + escapeHtml(order.productName || '-') + '</span></div>' +
+      '<div class="order-row"><span class="lbl">Quantity</span><span class="val">' + (order.quantity || 1) + '</span></div>' +
+      (order.note ? '<div class="order-row"><span class="lbl">Note</span><span class="val">' + escapeHtml(order.note) + '</span></div>' : '') +
+      '<div class="order-row"><span class="lbl">Status</span><span class="val" style="color:' + (order.status === 'pending' ? '#fa8c16' : 'var(--text-secondary)') + ';">' + (statusLabel[order.status] || order.status) + '</span></div>' +
+      '<div class="order-divider"></div>' +
+      '<div class="order-amount">' + (order.currencySymbol || '$') + ' ' + (order.amount || '0.00') + '</div>';
+  }
+
+  // 2. 登录/注册
+  function showAuth() {
+    document.getElementById('auth-section').style.display = 'block';
+    document.querySelectorAll('.tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('active'); });
+        document.querySelectorAll('.tab-content').forEach(function (x) { x.classList.remove('active'); });
+        this.classList.add('active');
+        document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+      });
+    });
+  }
+
+  document.getElementById('login-btn').addEventListener('click', function () {
+    var name = document.getElementById('login-name').value.trim();
+    var pass = document.getElementById('login-pass').value;
+    var err = document.getElementById('login-error');
+    err.textContent = ''; err.classList.remove('show');
+    if (!name) { err.textContent = 'Enter your account'; err.classList.add('show'); return; }
+    if (!pass) { err.textContent = 'Enter your password'; err.classList.add('show'); return; }
+
+    setLoading(this, true);
+    postJSON(loginUrl, { loginName: name, password: pass })
+      .then(function (res) {
+        if (res.data) { saveToken(res.data); currentToken = res.data.access_token; currentSn = res.data.sn; verifyIdentityAndShowApprove(); }
+        else { err.textContent = res.error || 'Login failed'; err.classList.add('show'); }
+      })
+      .catch(function () { err.textContent = 'Network error'; err.classList.add('show'); })
+      .finally(function () { setLoading(document.getElementById('login-btn'), false); });
+  });
+
+  document.getElementById('signup-btn').addEventListener('click', function () {
+    var name = document.getElementById('signup-name').value.trim();
+    var pass = document.getElementById('signup-pass').value;
+    var email = document.getElementById('signup-email').value.trim();
+    var err = document.getElementById('signup-error');
+    err.textContent = ''; err.classList.remove('show');
+    if (!name || name.length < 2) { err.textContent = 'Username too short'; err.classList.add('show'); return; }
+    if (!pass || pass.length < 6) { err.textContent = 'Password too short'; err.classList.add('show'); return; }
+
+    var self = this;
+    setLoading(this, true);
+    postJSON(registerUrl, { type: 'USERNAME', username: name, password: pass, email: email })
+      .then(function (res) {
+        if (res.data) { saveToken(res.data); currentToken = res.data.access_token; currentSn = res.data.sn; verifyIdentityAndShowApprove(); }
+        else { err.textContent = res.error || 'Signup failed'; err.classList.add('show'); }
+      })
+      .catch(function () { err.textContent = 'Network error'; err.classList.add('show'); })
+      .finally(function () { setLoading(self, false); });
+  });
+
+  // 3. 验证身份 → 显示审批按钮
+  function verifyIdentityAndShowApprove() {
+    var authApi = localStorage.getItem('x-api-auth') || 'http://localhost:4463';
+    fetch(authApi + '/auth/token/verify', {
+      headers: { 'Authorization': 'Bearer ' + currentToken }
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (!res.data) { showAuth(); return; }
+      document.getElementById('auth-section').style.display = 'none';
+      document.getElementById('approve-section').style.display = 'block';
+      document.getElementById('logged-user').textContent = (res.data.nickName || res.data.name) + ' (' + res.data.sn + ')';
+
+      if (currentOrder.status !== 'pending') {
+        document.getElementById('approve-btn').style.display = 'none';
+        document.getElementById('reject-btn').style.display = 'none';
+        showResult(true, 'Order already ' + currentOrder.status, '');
+      }
+    }).catch(function () { showAuth(); });
+  }
+
+  // 4. 审批
+  document.getElementById('approve-btn').addEventListener('click', function () {
+    setLoading(this, true);
+    document.getElementById('reject-btn').disabled = true;
+    var self = this;
+    fetch(orderApiBase + '/internal/order/' + orderId + '/approve', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + currentToken
+      },
+      body: JSON.stringify({ sn: currentSn, action: 'approve' })
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (res.data && res.data.success) {
+        showResult(true, 'Order Approved', 'Goods released to buyer.');
+      } else {
+        showResult(false, 'Approval Failed', res.error || 'Please try again.');
+      }
+    }).catch(function () {
+      showResult(false, 'Network Error', 'Please check your connection and try again.');
+    }).finally(function () {
+      setLoading(self, false);
+      document.getElementById('reject-btn').disabled = false;
+    });
+  });
+
+  document.getElementById('reject-btn').addEventListener('click', function () {
+    if (!confirm('Reject this order?')) return;
+    setLoading(this, true);
+    document.getElementById('approve-btn').disabled = true;
+    var self = this;
+    fetch(orderApiBase + '/internal/order/' + orderId + '/approve', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + currentToken
+      },
+      body: JSON.stringify({ sn: currentSn, action: 'reject' })
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      showResult(false, 'Order Rejected', res.data ? res.data.message : '');
+    }).catch(function () {
+      showResult(false, 'Network Error', '');
+    }).finally(function () {
+      setLoading(self, false);
+      document.getElementById('approve-btn').disabled = false;
+    });
+  });
+
+  document.getElementById('switch-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    localStorage.clear();
+    location.reload();
+  });
+
+  function showResult(success, msg, sub) {
+    document.getElementById('approve-section').style.display = 'none';
+    document.getElementById('result-section').style.display = 'block';
+    document.getElementById('result-icon-success').style.display = success ? 'flex' : 'none';
+    document.getElementById('result-icon-fail').style.display = success ? 'none' : 'flex';
+    document.getElementById('result-msg').textContent = msg;
+    document.getElementById('result-sub').textContent = sub;
+  }
+
+  function showError(msg) {
+    document.getElementById('order-info').innerHTML =
+      '<div style="text-align:center;padding:24px 0;">' +
+      '<p style="color:var(--error);font-size:15px;">' + escapeHtml(msg) + '</p></div>';
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+})();
+</script>
+</body>
+</html>

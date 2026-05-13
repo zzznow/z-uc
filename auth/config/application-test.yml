@@ -1,0 +1,18 @@
+name: "auth"
+mode: "test"
+port: 4463
+host: "0.0.0.0"
+mysql:
+  host: "127.0.0.1"
+  port: 3307
+  user: "root"
+  passwd: "Fndo123456"
+  dbname: "z_uc"
+  max_open_conns: 17
+  max_idle_conns: 8
+redis:
+  host: "127.0.0.1"
+  port: 7001
+  db: 0
+  passwd: "fd88-"
+  pool_size: 100

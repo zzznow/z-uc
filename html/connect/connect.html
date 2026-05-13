@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connect</title>
+<link rel="stylesheet" href="/html/common.css">
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="card-title">Third-Party Login</div>
+
+    <div id="provider-info" style="text-align:center;margin-bottom:24px;">
+      <p id="provider-name" style="font-size:15px;font-weight:500;color:var(--text);"></p>
+      <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">You will be redirected for authorization</p>
+    </div>
+
+    <div id="redirect-section" style="text-align:center;">
+      <div class="spinner"></div>
+      <p style="color:var(--text-secondary);margin-top:12px;font-size:14px;">Preparing...</p>
+    </div>
+
+    <div class="footer-link" style="margin-top:24px;">
+      <a href="/signin/login.html">Back to Sign In</a>
+    </div>
+  </div>
+</div>
+
+<script src="/html/common.js"></script>
+<script>
+(function () {
+  var provider = getQuery('provider');
+  var names = { wx: 'WeChat' };
+  document.getElementById('provider-name').textContent = names[provider] || 'Third-Party';
+
+  if (provider === 'wx') {
+    fetchState().then(function (state) {
+      if (!state) {
+        document.getElementById('redirect-section').innerHTML =
+          '<p style="color:var(--error);">Failed to initialize</p>';
+        return;
+      }
+      var redirectUri = location.origin + '/access/access.html?provider=wx';
+      sessionStorage.setItem('oauth-state', state);
+      sessionStorage.setItem('oauth-redirect-uri', redirectUri);
+
+      var wxAppId = 'wx_appid';
+      var wxUrl = 'https://open.weixin.qq.com/connect/oauth2/authorize' +
+        '?appid=' + wxAppId +
+        '&redirect_uri=' + encodeURIComponent(redirectUri) +
+        '&response_type=code' +
+        '&scope=snsapi_userinfo' +
+        '&state=' + encodeURIComponent(state) +
+        '#wechat_redirect';
+
+      document.getElementById('redirect-section').innerHTML =
+        '<button class="btn btn-primary" onclick="location.replace(\'' + wxUrl + '\')">Authorize with WeChat</button>';
+    }).catch(function () {
+      document.getElementById('redirect-section').innerHTML =
+        '<p style="color:var(--error);">Network error</p>';
+    });
+  } else {
+    document.getElementById('redirect-section').innerHTML =
+      '<p style="font-size:14px;color:var(--error);">Unknown provider</p>';
+  }
+})();
+</script>
+</body>
+</html>
