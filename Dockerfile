@@ -17,7 +17,7 @@ WORKDIR /build
 COPY auth/go.mod auth/go.sum ./
 RUN go mod download
 COPY . .
-RUN go build -ldflags="-s -w" -o app ./auth/cm
+RUN go build -ldflags="-s -w" -o app ./auth/cmd
 
 FROM alpine
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories

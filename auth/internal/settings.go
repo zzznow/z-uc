@@ -15,6 +15,7 @@ type AppConfig struct {
 	Port int    `mapstructure:"port"`
 	Host string `mapstructure:"host"`
 
+	BaseURL      string `mapstructure:"base_url"`
 	*MysqlConfig `mapstructure:"mysql"`
 	*RedisConfig `mapstructure:"redis"`
 	Apps         []WxmTokenEntry `mapstructure:"apps"`

@@ -5,6 +5,13 @@ import (
 )
 
 func RegisterRoutes(r *gin.Engine) {
+	r.GET("/health", func(c *gin.Context) {
+		c.String(200, "ok")
+	})
+	r.POST("/login", FormLogin)
+	r.POST("/login/refresh", RefreshToken)
+	r.POST("/login/sms", SmsLogin)
+	r.POST("/register", SignUp)
 	r.POST("/auth/state", NewState)
 	r.POST("/auth/google/token", GoogleToken)
 	r.POST("/auth/wx/token", WxToken)

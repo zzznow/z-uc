@@ -1,4 +1,4 @@
-// Package userclient �?替代 remote/client.go，直接调用函数，不走 HTTP
+// Package userclient 替代 remote/client.go，直接调用函数，不走 HTTP
 package userclient
 
 import (
