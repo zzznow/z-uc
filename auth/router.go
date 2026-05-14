@@ -5,7 +5,7 @@ import (
 )
 
 func RegisterRoutes(r *gin.Engine) {
-	r.GET("/health", func(c *gin.Context) {
+	r.GET("/healthz", func(c *gin.Context) {
 		c.String(200, "ok")
 	})
 	r.POST("/login", FormLogin)
