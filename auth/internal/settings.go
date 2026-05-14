@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
@@ -53,6 +54,11 @@ func InitConfig(env string) (err error) {
 		fmt.Printf("viper.ReadInConfig() failed, err:%v\n", err)
 		return
 	}
+
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
+	viper.BindEnv("mysql.passwd")
+	viper.BindEnv("redis.passwd")
 
 	// apps.yml from ConfigMap mount — merge on top
 	appsViper := viper.New()

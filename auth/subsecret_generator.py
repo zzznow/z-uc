@@ -22,7 +22,7 @@ import hashlib
 import secrets
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "REAAW332LPPPPPEC00S++++++SDEDSSDFCCCCCC_____FFRFDSSDS").encode()
+JWT_SECRET = os.environ.get("JWT_SECRET", "e5f46d066e99253103793124967992ec6da0889bed543b48928171fec9c18481").encode()
 PREFIX     = b"z-uc:app:"
 
 
