@@ -12,7 +12,7 @@ COPY auth/ ./
 COPY models/ ../models/
 RUN go build -mod=vendor -ldflags="-s -w" -o /app ./cmd
 
-FROM alpine:3.21
+FROM alpine
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
     apk --no-cache add tzdata ca-certificates && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
