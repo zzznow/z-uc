@@ -8,7 +8,8 @@ ENV GO111MODULE=on \
     GONOSUMDB=*
 
 WORKDIR /build
-COPY . .
+COPY auth/ ./auth/
+COPY models/ ./models/
 RUN go build -mod=vendor -ldflags="-s -w" -o app ./auth/cmd
 
 FROM alpine:3.21
