@@ -16,7 +16,7 @@ FROM alpine:3.23
 WORKDIR /apps
 ENV LANG=en_US.UTF-8
 
-COPY auth/APKINDEX.tar.gz /tmp/local-pkgs/
+COPY auth/pkgs/ /tmp/local-pkgs/
 RUN apk add --no-cache --repository /tmp/local-pkgs --allow-untrusted tzdata ca-certificates && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     update-ca-certificates && \
