@@ -17,7 +17,7 @@ WORKDIR /apps
 ENV LANG=en_US.UTF-8
 
 COPY auth/pkgs/ /tmp/local-pkgs/
-RUN apk add --no-cache --repository /tmp/local-pkgs --allow-untrusted tzdata ca-certificates && \
+RUN apk add --no-cache --no-network --repository /tmp/local-pkgs --allow-untrusted tzdata ca-certificates && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     update-ca-certificates && \
     rm -rf /tmp/local-pkgs
