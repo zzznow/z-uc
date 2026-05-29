@@ -25,4 +25,4 @@ RUN echo "http://mirrors.tuna.tsinghua.edu.cn/alpine/v3.23/main" > /etc/apk/repo
 COPY --from=builder /app .
 
 EXPOSE 80
-ENTRYPOINT ["./app", "prod"]
+ENTRYPOINT ["./app"]
