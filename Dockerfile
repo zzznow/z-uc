@@ -8,7 +8,7 @@ ENV GO111MODULE=on \
     GONOSUMDB=*
 
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
-    apk --no-cache add ca-certificates && \
+    apk --no-cache add tzdata ca-certificates && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 WORKDIR /build/auth
