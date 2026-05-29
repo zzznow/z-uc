@@ -16,11 +16,9 @@ FROM alpine:3.23
 WORKDIR /apps
 ENV LANG=en_US.UTF-8
 
-COPY auth/pkgs/ /tmp/local-pkgs/
-RUN apk add --no-cache --no-network --repository /tmp/local-pkgs --allow-untrusted tzdata ca-certificates && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    update-ca-certificates && \
-    rm -rf /tmp/local-pkgs
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 COPY --from=builder /app .
 
