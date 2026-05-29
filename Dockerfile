@@ -16,9 +16,7 @@ FROM alpine:3.23
 WORKDIR /apps
 ENV LANG=en_US.UTF-8
 
-RUN echo "https://mirrors.tuna.tsinghua.edu.cn/alpine/v3.23/main" > /etc/apk/repositories && \
-    echo "https://mirrors.tuna.tsinghua.edu.cn/alpine/v3.23/community" >> /etc/apk/repositories && \
-    apk add --no-cache tzdata ca-certificates && \
+RUN apk add --no-cache tzdata ca-certificates && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     update-ca-certificates
 
