@@ -16,11 +16,11 @@ FROM alpine:3.23
 WORKDIR /apps
 ENV LANG=en_US.UTF-8
 
-COPY auth/pkgs/ /tmp/local-pkgs/
-RUN apk add --no-cache --no-network --repository /tmp/local-pkgs --allow-untrusted tzdata ca-certificates && \
+RUN echo "http://mirrors.tuna.tsinghua.edu.cn/alpine/v3.23/main" > /etc/apk/repositories && \
+    echo "http://mirrors.tuna.tsinghua.edu.cn/alpine/v3.23/community" >> /etc/apk/repositories && \
+    apk add --no-cache tzdata ca-certificates && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    update-ca-certificates && \
-    rm -rf /tmp/local-pkgs
+    update-ca-certificates
 
 COPY --from=builder /app .
 
