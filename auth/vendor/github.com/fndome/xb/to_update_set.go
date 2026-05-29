@@ -1,0 +1,64 @@
+// Copyright 2025 me.fndo.xb
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+package xb
+
+import (
+	"strings"
+
+	. "github.com/fndome/xb/internal"
+)
+
+func (built *Built) toUpdateSql(bp *strings.Builder, vs *[]interface{}) {
+	if built.Updates == nil {
+		return
+	}
+
+	bp.WriteString(SET)
+	length := len(*built.Updates)
+
+	for i := 0; i < length; i++ {
+		u := (*built.Updates)[i]
+		
+		// Handle X() method (Op == "SET")
+		if u.Op == "SET" {
+			bp.WriteString(u.Key)
+			if u.Value != nil {
+				arr := u.Value.([]interface{})
+				for _, v := range arr {
+					*vs = append(*vs, v)
+				}
+			}
+		} else {
+			// Handle regular Set() method
+			bp.WriteString(u.Key)
+			if !strings.Contains(u.Key, EQ) {
+				bp.WriteString(SPACE)
+				bp.WriteString(EQ)
+			}
+			if u.Value != nil {
+				bp.WriteString(PLACE_HOLDER)
+				*vs = append(*vs, u.Value)
+			}
+		}
+		
+		if i < length-1 {
+			bp.WriteString(COMMA)
+		} else {
+			bp.WriteString(SPACE)
+		}
+	}
+}

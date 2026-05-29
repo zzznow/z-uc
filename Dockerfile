@@ -4,14 +4,12 @@ ENV GO111MODULE=on \
     CGO_ENABLED=0 \
     GOOS=linux \
     GOARCH=amd64 \
-    GOPROXY=https://proxy.golang.org,direct \
+    GOPROXY=off \
     GONOSUMDB=*
 
 WORKDIR /build
-COPY auth/go.mod auth/go.sum ./
-RUN go mod download
 COPY . .
-RUN go build -ldflags="-s -w" -o app ./auth/cmd
+RUN go build -mod=vendor -ldflags="-s -w" -o app ./auth/cmd
 
 FROM alpine:3.21
 RUN apk --no-cache add tzdata ca-certificates && \
