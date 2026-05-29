@@ -7,23 +7,23 @@ ENV GO111MODULE=on \
     GOPROXY=https://goproxy.cn,direct \
     GONOSUMDB=*
 
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    apk --no-cache add ca-certificates && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
 WORKDIR /build/auth
 COPY auth/ ./
 COPY models/ ../models/
 RUN go build -mod=vendor -ldflags="-s -w" -o /app ./cmd
 
 FROM alpine
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
-    apk --no-cache add tzdata ca-certificates && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    update-ca-certificates
-
 WORKDIR /apps
 ENV LANG en_US.UTF-8
 
-COPY --from=builder /app .
 COPY --from=builder /etc/localtime /etc/localtime
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+COPY --from=builder /app .
 
 EXPOSE 80
 ENTRYPOINT ["./app", "prod"]
