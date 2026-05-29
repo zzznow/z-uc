@@ -7,10 +7,10 @@ ENV GO111MODULE=on \
     GOPROXY=https://goproxy.cn,direct \
     GONOSUMDB=*
 
-WORKDIR /build
-COPY auth/ ./auth/
-COPY models/ ./models/
-RUN go build -mod=vendor -ldflags="-s -w" -o app ./auth/cmd
+WORKDIR /build/auth
+COPY auth/ ./
+COPY models/ ../models/
+RUN go build -mod=vendor -ldflags="-s -w" -o /app ./cmd
 
 FROM alpine:3.21
 RUN apk --no-cache add tzdata ca-certificates && \
@@ -20,7 +20,7 @@ RUN apk --no-cache add tzdata ca-certificates && \
 WORKDIR /apps
 ENV LANG en_US.UTF-8
 
-COPY --from=builder /build/app .
+COPY --from=builder /app .
 COPY --from=builder /etc/localtime /etc/localtime
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
