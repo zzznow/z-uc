@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: z-uc-auth-apps
-data:
-  apps.yml: |
-    apps:
-      - id: "mini-app-example"
-        token_url: "http://mini-app-example.z-uc.svc.cluster.local:8080/internal/token/generate"
