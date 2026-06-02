@@ -17,6 +17,7 @@ type AppConfig struct {
 	Host string `mapstructure:"host"`
 
 	BaseURL      string `mapstructure:"base_url"`
+	UserURL      string `mapstructure:"user_url"`
 	*MysqlConfig `mapstructure:"mysql"`
 	*RedisConfig `mapstructure:"redis"`
 	Apps         []WxmTokenEntry `mapstructure:"apps"`
