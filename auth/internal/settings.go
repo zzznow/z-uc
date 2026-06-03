@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
@@ -71,28 +70,11 @@ func InitConfig(env string) (err error) {
 		for k, v := range appsViper.AllSettings() {
 			viper.Set(k, v)
 		}
-		appsViper.WatchConfig()
-		appsViper.OnConfigChange(func(in fsnotify.Event) {
-			fmt.Println("apps.yml changed, reloading...")
-			for k, v := range appsViper.AllSettings() {
-				viper.Set(k, v)
-			}
-			if err = viper.Unmarshal(Conf); err != nil {
-				fmt.Printf("viper.Unmarshal(Conf) failed, err:%v\n", err)
-			}
-		})
 	}
 
 	if err = viper.Unmarshal(Conf); err != nil {
 		fmt.Printf("viper.Unmarshal(Conf) failed, err:%v\n", err)
 		return
 	}
-	viper.WatchConfig()
-	viper.OnConfigChange(func(in fsnotify.Event) {
-		fmt.Println("config file changed...")
-		if err = viper.Unmarshal(Conf); err != nil {
-			fmt.Printf("viper.Unmarshal(Conf) failed, err:%v\n", err)
-		}
-	})
 	return
 }
