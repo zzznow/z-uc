@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/zzznow/common"
 	"github.com/zzznow/z-uc/auth"
 	"github.com/zzznow/z-uc/auth/internal"
 	"github.com/gin-gonic/gin"
@@ -32,6 +33,8 @@ func main() {
 
 	gin.SetMode(internal.Conf.Mode)
 	r := gin.Default()
+	r.Use(common.TraceMiddleware())
+	r.Use(func(c *gin.Context) { common.SetServiceName(c, "z-uc-auth"); c.Next() })
 	auth.RegisterRoutes(r)
 
 	addr := fmt.Sprintf("%s:%d", internal.Conf.Host, internal.Conf.Port)

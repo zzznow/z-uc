@@ -38,13 +38,13 @@ func SmsLogin(c *gin.Context) {
 		SetResult(&smsVerifyResp{}).
 		Post(internal.Conf.BaseURL + "/sms/verify")
 	if err != nil || resp.StatusCode() != http.StatusOK {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "verification code verification failed"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: verification code verification failed"})
 		return
 	}
 
 	result := resp.Result().(*smsVerifyResp)
 	if !result.Data.Verified {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "verification code incorrect"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: verification code incorrect"})
 		return
 	}
 
@@ -69,13 +69,13 @@ func SmsLogin(c *gin.Context) {
 
 		tx, txErr := internal.Db.Beginx()
 		if txErr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
 			return
 		}
 		defer tx.Rollback()
 
 		if !UserRepo.CreateTx(tx, user) {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
 			return
 		}
 		user.Sn = models.GenerateSN(user.Id)
@@ -87,11 +87,11 @@ func SmsLogin(c *gin.Context) {
 			CreateAt:  now,
 		}
 		if !NamesRepo.CreateTx(tx, n) {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
 			return
 		}
 		if cmtErr := tx.Commit(); cmtErr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
 			return
 		}
 
@@ -101,7 +101,7 @@ func SmsLogin(c *gin.Context) {
 
 	user, err := UserRepo.GetById(names.UserId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: user not found"})
 		return
 	}
 

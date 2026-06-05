@@ -13,14 +13,14 @@ import (
 func VerifyTokenHandler(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: unauthorized"})
 		return
 	}
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 	claims, err := models.VerifyToken(tokenString)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: invalid token"})
 		return
 	}
 
@@ -40,14 +40,14 @@ func VerifyTokenHandler(c *gin.Context) {
 func GetTokenInfo(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: unauthorized"})
 		return
 	}
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 	claims, err := models.VerifyToken(tokenString)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: invalid token"})
 		return
 	}
 
@@ -55,7 +55,7 @@ func GetTokenInfo(c *gin.Context) {
 	var user models.User
 	err = internal.Db.Get(&user, "SELECT * FROM t_user WHERE sn = ?", sn)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "z-uc-auth: user not found"})
 		return
 	}
 

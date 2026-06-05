@@ -38,7 +38,7 @@ func WxMiniToken(c *gin.Context) {
 	wxResp, err := exchangeWxMiniCode(req.Code)
 	if err != nil {
 		LOGGER.Error("wechat mini program code2session failed", "err", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "wechat auth failed"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: wechat auth failed"})
 		return
 	}
 
@@ -55,19 +55,19 @@ func WxMiniToken(c *gin.Context) {
 	user, err := signUpOrLoginByThird("wxmini", unionId, unionId, unionId+"-wxmp",
 		req.NickName, req.Icon, "", "")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "login failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: login failed"})
 		return
 	}
 
 	xToken, err := models.GenerateToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token generation failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
 		return
 	}
 
 	xRefreshToken, err := models.GenerateRefreshToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token generation failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
 		return
 	}
 

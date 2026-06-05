@@ -33,39 +33,39 @@ func GoogleToken(c *gin.Context) {
 
 	savedState, err := getState(c, req.State)
 	if err != nil || savedState == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid state"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: invalid state"})
 		return
 	}
 
 	redirectUri := req.RedirectUri
 	if redirectUri == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "redirect_uri required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: redirect_uri required"})
 		return
 	}
 
 	googleResp, err := exchangeGoogleCode(req.Code, redirectUri)
 	if err != nil {
 		LOGGER.Error("google token exchange failed", "err", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "google auth failed"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: google auth failed"})
 		return
 	}
 
 	userInfo, err := getGoogleUserInfo(googleResp.AccessToken)
 	if err != nil {
 		LOGGER.Error("google userinfo failed", "err", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "google auth failed"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: google auth failed"})
 		return
 	}
 
 	if !userInfo.VerifiedEmail {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "google email not verified"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: google email not verified"})
 		return
 	}
 
 	user, err := signUpOrLoginByThird("google", userInfo.Email, userInfo.Id, userInfo.Id+"-google",
 		userInfo.Name, userInfo.Picture, userInfo.Email, userInfo.Locale)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "login failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: login failed"})
 		return
 	}
 

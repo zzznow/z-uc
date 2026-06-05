@@ -40,14 +40,14 @@ func WxToken(c *gin.Context) {
 
 	savedState, err := getState(c, req.State)
 	if err != nil || savedState == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid state"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: invalid state"})
 		return
 	}
 
 	wxResp, err := exchangeWxCode(req.Code)
 	if err != nil {
 		LOGGER.Error("wechat token exchange failed", "err", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "wechat auth failed"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: wechat auth failed"})
 		return
 	}
 
@@ -59,7 +59,7 @@ func WxToken(c *gin.Context) {
 	wxUserInfo, err := getWxUserInfo(wxResp.AccessToken, wxResp.OpenId)
 	if err != nil {
 		LOGGER.Error("wechat userinfo failed", "err", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "wechat auth failed"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: wechat auth failed"})
 		return
 	}
 
@@ -74,7 +74,7 @@ func WxToken(c *gin.Context) {
 	user, err := signUpOrLoginByThird("wx", unionId, unionId, unionId+"-wx",
 		wxUserInfo.Nickname, wxUserInfo.HeadImgUrl, "", wxUserInfo.Country+wxUserInfo.Province+wxUserInfo.City)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "login failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: login failed"})
 		return
 	}
 

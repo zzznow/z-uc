@@ -22,47 +22,47 @@ func SignUp(c *gin.Context) {
 	switch req.Type {
 	case "email":
 		if req.Email == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "email required"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: email required"})
 			return
 		}
 		loginName = req.Email
 		if NamesRepo.Exists(loginName) {
-			c.JSON(http.StatusConflict, gin.H{"error": "email already registered"})
+			c.JSON(http.StatusConflict, gin.H{"error": "z-uc-auth: email already registered"})
 			return
 		}
 	case "phone":
 		if req.Tel == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "phone required"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: phone required"})
 			return
 		}
 		loginName = req.Tel
 		if NamesRepo.Exists(loginName) {
-			c.JSON(http.StatusConflict, gin.H{"error": "phone already registered"})
+			c.JSON(http.StatusConflict, gin.H{"error": "z-uc-auth: phone already registered"})
 			return
 		}
 	case "username":
 		if req.Username == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "username required"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: username required"})
 			return
 		}
 		loginName = req.Username
 		if NamesRepo.Exists(loginName) {
-			c.JSON(http.StatusConflict, gin.H{"error": "username already exists"})
+			c.JSON(http.StatusConflict, gin.H{"error": "z-uc-auth: username already exists"})
 			return
 		}
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported register type"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: unsupported register type"})
 		return
 	}
 
 	if req.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "password required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: password required"})
 		return
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
 		return
 	}
 
@@ -93,13 +93,13 @@ func SignUp(c *gin.Context) {
 
 	tx, err := internal.Db.Beginx()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
 		return
 	}
 	defer tx.Rollback()
 
 	if !UserRepo.CreateTx(tx, user) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
 		return
 	}
 
@@ -112,23 +112,23 @@ func SignUp(c *gin.Context) {
 		CreateAt:  now,
 	}
 	if !NamesRepo.CreateTx(tx, names) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
 		return
 	}
 
 	token, err := models.GenerateToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token generation failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
 		return
 	}
 	refreshToken, err := models.GenerateRefreshToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token generation failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
 		return
 	}
 

@@ -26,35 +26,35 @@ func Register(c *gin.Context) {
 	switch req.Type {
 	case "USERNAME":
 		if req.Username == "" || req.Password == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "username and password required"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: username and password required"})
 			return
 		}
 		loginName = req.Username
 	case "EMAIL":
 		if req.Email == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "email required"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: email required"})
 			return
 		}
 		loginName = req.Email
 	case "TEL":
 		if req.Tel == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "tel required"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: tel required"})
 			return
 		}
 		loginName = req.Tel
 	case "WX_UNION":
 		if req.WxUnionId == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "wxUnionId required"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: wxUnionId required"})
 			return
 		}
 		loginName = req.WxUnionId
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid signup type"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: invalid signup type"})
 		return
 	}
 
 	if NamesRepo.Exists(loginName) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "account already exists"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: account already exists"})
 		return
 	}
 
@@ -62,7 +62,7 @@ func Register(c *gin.Context) {
 	if req.Password != "" {
 		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "password encrypt failed"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: password encrypt failed"})
 			return
 		}
 		passwordHash = string(hash)
@@ -94,13 +94,13 @@ func Register(c *gin.Context) {
 
 	tx, err := internal.Db.Beginx()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "system error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: system error"})
 		return
 	}
 	defer tx.Rollback()
 
 	if !UserRepo.CreateTx(tx, user) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "register failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: register failed"})
 		return
 	}
 
@@ -114,18 +114,18 @@ func Register(c *gin.Context) {
 		CreateAt:  now,
 	}
 	if !NamesRepo.CreateTx(tx, names) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "register failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: register failed"})
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "register failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: register failed"})
 		return
 	}
 
 	token, err := models.GenerateToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token generation failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
 		return
 	}
 
@@ -145,7 +145,7 @@ func GetProfile(c *gin.Context) {
 	sn := c.GetString("sn")
 	user, err := UserRepo.GetBySn(sn)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "z-uc-auth: user not found"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": models.UserToVO(user)})
@@ -155,7 +155,7 @@ func UpdateProfile(c *gin.Context) {
 	sn := c.GetString("sn")
 	user, err := UserRepo.GetBySn(sn)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "z-uc-auth: user not found"})
 		return
 	}
 
@@ -182,7 +182,7 @@ func UpdateProfile(c *gin.Context) {
 	}
 
 	if !UserRepo.Update(user) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "update failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: update failed"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": models.UserToVO(user)})
@@ -192,7 +192,7 @@ func ChangePassword(c *gin.Context) {
 	sn := c.GetString("sn")
 	user, err := UserRepo.GetBySn(sn)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "z-uc-auth: user not found"})
 		return
 	}
 
@@ -203,18 +203,18 @@ func ChangePassword(c *gin.Context) {
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "old password incorrect"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: old password incorrect"})
 		return
 	}
 
 	newHash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "password encrypt failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: password encrypt failed"})
 		return
 	}
 
 	if !UserRepo.UpdatePassword(user.Id, string(newHash)) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "password change failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: password change failed"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "password changed"})
@@ -224,7 +224,7 @@ func CancelAccount(c *gin.Context) {
 	sn := c.GetString("sn")
 	user, err := UserRepo.GetBySn(sn)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "z-uc-auth: user not found"})
 		return
 	}
 
@@ -239,7 +239,7 @@ func GetUserBySnInternal(c *gin.Context) {
 	sn := c.Param("sn")
 	user, err := UserRepo.GetBySn(sn)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "z-uc-auth: user not found"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": models.UserToVO(user)})
@@ -249,7 +249,7 @@ func GetUserByUnionIdInternal(c *gin.Context) {
 	unionId := c.Param("unionId")
 	user, err := UserRepo.GetByWxUnionId(unionId)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "z-uc-auth: user not found"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": models.UserToVO(user)})
@@ -259,25 +259,25 @@ func GetUserIdInternal(c *gin.Context) {
 	userIdStr := c.Query("userId")
 	userId, err := strconv.ParseUint(userIdStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid userId"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: invalid userId"})
 		return
 	}
 
 	user, err := UserRepo.GetById(userId)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "z-uc-auth: user not found"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": models.UserToVO(user)})
 }
 
-// ── Auth 中间件 ─────────────────────────────────────────
+// ── Auth 中间�?─────────────────────────────────────────
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: unauthorized"})
 			c.Abort()
 			return
 		}
@@ -289,7 +289,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		claims, err := models.VerifyToken(tokenString)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: invalid token"})
 			c.Abort()
 			return
 		}

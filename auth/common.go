@@ -122,13 +122,13 @@ func createThirdUser(createFrom, loginName, wxUnionId, name, nickName, icon, ema
 func respondWithTokens(c *gin.Context, user *models.User) {
 	token, err := models.GenerateToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token generation failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
 		return
 	}
 
 	refreshToken, err := models.GenerateRefreshToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token generation failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
 		return
 	}
 
