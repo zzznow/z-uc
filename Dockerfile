@@ -10,7 +10,6 @@ ENV GO111MODULE=on \
 WORKDIR /build/auth
 COPY auth/ ./
 COPY models/ ../models/
-COPY common/ ../../common/
 RUN go build -mod=mod -ldflags="-s -w" -o /app ./cmd
 
 FROM alpine:3.23

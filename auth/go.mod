@@ -58,7 +58,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
-	github.com/zzznow/common v0.0.0
+	github.com/zzznow/common v0.1.0
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/arch v0.22.0 // indirect
@@ -72,5 +72,3 @@ require (
 )
 
 replace github.com/zzznow/z-uc/models => ../models
-
-replace github.com/zzznow/common => ../../common
