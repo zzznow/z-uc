@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"github.com/zzznow/common"
 	"time"
 
 	"github.com/zzznow/z-uc/models"
@@ -14,7 +15,7 @@ import (
 func SignUp(c *gin.Context) {
 	var req models.SignUpDTO
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		common.ErrorMsg(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -22,47 +23,47 @@ func SignUp(c *gin.Context) {
 	switch req.Type {
 	case "email":
 		if req.Email == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: email required"})
+			common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: email required")
 			return
 		}
 		loginName = req.Email
 		if NamesRepo.Exists(loginName) {
-			c.JSON(http.StatusConflict, gin.H{"error": "z-uc-auth: email already registered"})
+			common.ErrorMsg(c, http.StatusConflict, "z-uc-auth: email already registered")
 			return
 		}
 	case "phone":
 		if req.Tel == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: phone required"})
+			common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: phone required")
 			return
 		}
 		loginName = req.Tel
 		if NamesRepo.Exists(loginName) {
-			c.JSON(http.StatusConflict, gin.H{"error": "z-uc-auth: phone already registered"})
+			common.ErrorMsg(c, http.StatusConflict, "z-uc-auth: phone already registered")
 			return
 		}
 	case "username":
 		if req.Username == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: username required"})
+			common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: username required")
 			return
 		}
 		loginName = req.Username
 		if NamesRepo.Exists(loginName) {
-			c.JSON(http.StatusConflict, gin.H{"error": "z-uc-auth: username already exists"})
+			common.ErrorMsg(c, http.StatusConflict, "z-uc-auth: username already exists")
 			return
 		}
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: unsupported register type"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: unsupported register type")
 		return
 	}
 
 	if req.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: password required"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: password required")
 		return
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: internal error")
 		return
 	}
 
@@ -93,13 +94,13 @@ func SignUp(c *gin.Context) {
 
 	tx, err := internal.Db.Beginx()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: internal error")
 		return
 	}
 	defer tx.Rollback()
 
 	if !UserRepo.CreateTx(tx, user) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: internal error")
 		return
 	}
 
@@ -112,23 +113,23 @@ func SignUp(c *gin.Context) {
 		CreateAt:  now,
 	}
 	if !NamesRepo.CreateTx(tx, names) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: internal error")
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: internal error")
 		return
 	}
 
 	token, err := models.GenerateToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: token generation failed")
 		return
 	}
 	refreshToken, err := models.GenerateRefreshToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: token generation failed")
 		return
 	}
 

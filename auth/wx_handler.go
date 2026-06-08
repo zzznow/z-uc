@@ -3,6 +3,7 @@ package auth
 import (
 	LOGGER "log/slog"
 	"net/http"
+	"github.com/zzznow/common"
 	"net/url"
 
 	"github.com/zzznow/z-uc/models"
@@ -34,32 +35,32 @@ type WxUserInfo struct {
 func WxToken(c *gin.Context) {
 	var req models.ThirdLoginDTO
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		common.ErrorMsg(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	savedState, err := getState(c, req.State)
 	if err != nil || savedState == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: invalid state"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: invalid state")
 		return
 	}
 
 	wxResp, err := exchangeWxCode(req.Code)
 	if err != nil {
 		LOGGER.Error("wechat token exchange failed", "err", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: wechat auth failed"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: wechat auth failed")
 		return
 	}
 
 	if wxResp.ErrCode != 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": wxResp.ErrMsg})
+		common.ErrorMsg(c, http.StatusBadRequest, wxResp.ErrMsg)
 		return
 	}
 
 	wxUserInfo, err := getWxUserInfo(wxResp.AccessToken, wxResp.OpenId)
 	if err != nil {
 		LOGGER.Error("wechat userinfo failed", "err", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: wechat auth failed"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: wechat auth failed")
 		return
 	}
 
@@ -74,7 +75,7 @@ func WxToken(c *gin.Context) {
 	user, err := signUpOrLoginByThird("wx", unionId, unionId, unionId+"-wx",
 		wxUserInfo.Nickname, wxUserInfo.HeadImgUrl, "", wxUserInfo.Country+wxUserInfo.Province+wxUserInfo.City)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: login failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: login failed")
 		return
 	}
 
@@ -115,3 +116,4 @@ func getWxUserInfo(accessToken, openId string) (*WxUserInfo, error) {
 
 	return resp.Result().(*WxUserInfo), nil
 }
+

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"github.com/zzznow/common"
 	"time"
 
 	"github.com/zzznow/z-uc/models"
@@ -25,7 +26,7 @@ type smsVerifyResp struct {
 func SmsLogin(c *gin.Context) {
 	var req SmsLoginDTO
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		common.ErrorMsg(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -38,13 +39,13 @@ func SmsLogin(c *gin.Context) {
 		SetResult(&smsVerifyResp{}).
 		Post(internal.Conf.BaseURL + "/sms/verify")
 	if err != nil || resp.StatusCode() != http.StatusOK {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: verification code verification failed"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: verification code verification failed")
 		return
 	}
 
 	result := resp.Result().(*smsVerifyResp)
 	if !result.Data.Verified {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: verification code incorrect"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: verification code incorrect")
 		return
 	}
 
@@ -69,13 +70,13 @@ func SmsLogin(c *gin.Context) {
 
 		tx, txErr := internal.Db.Beginx()
 		if txErr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
+			common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: internal error")
 			return
 		}
 		defer tx.Rollback()
 
 		if !UserRepo.CreateTx(tx, user) {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
+			common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: internal error")
 			return
 		}
 		user.Sn = models.GenerateSN(user.Id)
@@ -87,11 +88,11 @@ func SmsLogin(c *gin.Context) {
 			CreateAt:  now,
 		}
 		if !NamesRepo.CreateTx(tx, n) {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
+			common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: internal error")
 			return
 		}
 		if cmtErr := tx.Commit(); cmtErr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: internal error"})
+			common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: internal error")
 			return
 		}
 
@@ -101,7 +102,7 @@ func SmsLogin(c *gin.Context) {
 
 	user, err := UserRepo.GetById(names.UserId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: user not found"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: user not found")
 		return
 	}
 

@@ -3,6 +3,7 @@ package auth
 import (
 	"net/http"
 
+	"github.com/zzznow/common"
 	"github.com/zzznow/z-uc/models"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -13,43 +14,43 @@ import (
 func FormLogin(c *gin.Context) {
 	var req models.LoginDTO
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		common.ErrorMsg(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	var names models.Names
 	err := internal.Db.Get(&names, "SELECT login_name, user_id, app_id, create_at FROM t_names WHERE login_name = ?", req.LoginName)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: username or password error"})
+		common.ErrorMsg(c, http.StatusUnauthorized, "z-uc-auth: username or password error")
 		return
 	}
 
 	var user models.User
 	err = internal.Db.Get(&user, "SELECT * FROM t_user WHERE id = ?", names.UserId)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: username or password error"})
+		common.ErrorMsg(c, http.StatusUnauthorized, "z-uc-auth: username or password error")
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: username or password error"})
+		common.ErrorMsg(c, http.StatusUnauthorized, "z-uc-auth: username or password error")
 		return
 	}
 
 	if user.Enabled != 1 {
-		c.JSON(http.StatusForbidden, gin.H{"error": "z-uc-auth: account disabled"})
+		common.ErrorMsg(c, http.StatusForbidden, "z-uc-auth: account disabled")
 		return
 	}
 
 	token, err := models.GenerateToken(&user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: token generation failed")
 		return
 	}
 
 	refreshToken, err := models.GenerateRefreshToken(&user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: token generation failed")
 		return
 	}
 
@@ -66,19 +67,19 @@ func FormLogin(c *gin.Context) {
 func RefreshToken(c *gin.Context) {
 	var req models.TokenRefreshDTO
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		common.ErrorMsg(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	claims, err := models.VerifyToken(req.RefreshToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: invalid refresh token"})
+		common.ErrorMsg(c, http.StatusUnauthorized, "z-uc-auth: invalid refresh token")
 		return
 	}
 
 	tokenType, _ := claims["type"].(string)
 	if tokenType != "refresh" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: not a refresh token"})
+		common.ErrorMsg(c, http.StatusUnauthorized, "z-uc-auth: not a refresh token")
 		return
 	}
 
@@ -86,19 +87,19 @@ func RefreshToken(c *gin.Context) {
 	var user models.User
 	err = internal.Db.Get(&user, "SELECT * FROM t_user WHERE sn = ?", sn)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "z-uc-auth: user not found"})
+		common.ErrorMsg(c, http.StatusUnauthorized, "z-uc-auth: user not found")
 		return
 	}
 
 	token, err := models.GenerateToken(&user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: token generation failed")
 		return
 	}
 
 	refreshToken, err := models.GenerateRefreshToken(&user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: token generation failed")
 		return
 	}
 
@@ -110,3 +111,4 @@ func RefreshToken(c *gin.Context) {
 		ExpiresIn:    int64(models.TokenExpiry.Seconds()),
 	}})
 }
+

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	LOGGER "log/slog"
 	"net/http"
+	"github.com/zzznow/common"
 	"time"
 
 	"github.com/zzznow/z-uc/models"
@@ -122,13 +123,13 @@ func createThirdUser(createFrom, loginName, wxUnionId, name, nickName, icon, ema
 func respondWithTokens(c *gin.Context, user *models.User) {
 	token, err := models.GenerateToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: token generation failed")
 		return
 	}
 
 	refreshToken, err := models.GenerateRefreshToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: token generation failed")
 		return
 	}
 
@@ -181,3 +182,4 @@ func getState(c *gin.Context, state string) (string, error) {
 	}
 	return state, nil
 }
+

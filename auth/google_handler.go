@@ -3,6 +3,7 @@ package auth
 import (
 	LOGGER "log/slog"
 	"net/http"
+	"github.com/zzznow/common"
 
 	"github.com/zzznow/z-uc/models"
 	"github.com/gin-gonic/gin"
@@ -27,45 +28,45 @@ type GoogleUserInfo struct {
 func GoogleToken(c *gin.Context) {
 	var req models.ThirdLoginDTO
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		common.ErrorMsg(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	savedState, err := getState(c, req.State)
 	if err != nil || savedState == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: invalid state"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: invalid state")
 		return
 	}
 
 	redirectUri := req.RedirectUri
 	if redirectUri == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: redirect_uri required"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: redirect_uri required")
 		return
 	}
 
 	googleResp, err := exchangeGoogleCode(req.Code, redirectUri)
 	if err != nil {
 		LOGGER.Error("google token exchange failed", "err", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: google auth failed"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: google auth failed")
 		return
 	}
 
 	userInfo, err := getGoogleUserInfo(googleResp.AccessToken)
 	if err != nil {
 		LOGGER.Error("google userinfo failed", "err", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: google auth failed"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: google auth failed")
 		return
 	}
 
 	if !userInfo.VerifiedEmail {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: google email not verified"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: google email not verified")
 		return
 	}
 
 	user, err := signUpOrLoginByThird("google", userInfo.Email, userInfo.Id, userInfo.Id+"-google",
 		userInfo.Name, userInfo.Picture, userInfo.Email, userInfo.Locale)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: login failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: login failed")
 		return
 	}
 
@@ -102,3 +103,4 @@ func getGoogleUserInfo(accessToken string) (*GoogleUserInfo, error) {
 
 	return resp.Result().(*GoogleUserInfo), nil
 }
+

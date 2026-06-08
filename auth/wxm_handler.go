@@ -4,6 +4,7 @@ import (
 	"fmt"
 	LOGGER "log/slog"
 	"net/http"
+	"github.com/zzznow/common"
 	"net/url"
 	"time"
 
@@ -31,19 +32,19 @@ type AppTokenResponse struct {
 func WxMiniToken(c *gin.Context) {
 	var req models.WxMiniLoginDTO
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		common.ErrorMsg(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	wxResp, err := exchangeWxMiniCode(req.Code)
 	if err != nil {
 		LOGGER.Error("wechat mini program code2session failed", "err", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "z-uc-auth: wechat auth failed"})
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: wechat auth failed")
 		return
 	}
 
 	if wxResp.ErrCode != 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": wxResp.ErrMsg})
+		common.ErrorMsg(c, http.StatusBadRequest, wxResp.ErrMsg)
 		return
 	}
 
@@ -55,19 +56,19 @@ func WxMiniToken(c *gin.Context) {
 	user, err := signUpOrLoginByThird("wxmini", unionId, unionId, unionId+"-wxmp",
 		req.NickName, req.Icon, "", "")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: login failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: login failed")
 		return
 	}
 
 	xToken, err := models.GenerateToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: token generation failed")
 		return
 	}
 
 	xRefreshToken, err := models.GenerateRefreshToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "z-uc-auth: token generation failed"})
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: token generation failed")
 		return
 	}
 
@@ -161,3 +162,4 @@ func requestAppToken(app *internal.WxmTokenEntry, sn, openId, unionId string, us
 
 	return result.Data.Token, result.Data.ExpiresIn, nil
 }
+
