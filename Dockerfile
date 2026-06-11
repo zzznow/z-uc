@@ -5,12 +5,15 @@ ENV GO111MODULE=on \
     GOOS=linux \
     GOARCH=amd64 \
     GOPROXY=https://goproxy.cn,direct \
-    GONOSUMDB=*
+    GONOSUMDB=* \
+    GOMODCACHE=/cache/gomod
 
 WORKDIR /build/auth
 COPY auth/ ./
 COPY models/ ../models/
-RUN go build -mod=mod -ldflags="-s -w" -o /app ./cmd
+
+RUN --mount=type=cache,target=/cache/gomod,sharing=locked \
+    go build -mod=mod -ldflags="-s -w" -o /app ./cmd
 
 FROM alpine:3.23
 WORKDIR /apps
