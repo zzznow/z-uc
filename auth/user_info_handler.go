@@ -2,11 +2,12 @@ package auth
 
 import (
 	"net/http"
-	"github.com/zzznow/common"
 	"strconv"
 
-	"github.com/zzznow/z-uc/models"
+	"github.com/zzznow/common"
+
 	"github.com/gin-gonic/gin"
+	"github.com/zzznow/z-uc/models"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/zzznow/z-uc/auth/internal"
@@ -221,6 +222,106 @@ func ChangePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "password changed"})
 }
 
+// ── 绑定手机号 ──────────────────────────────────────────
+
+func BindPhone(c *gin.Context) {
+	sn := c.GetString("sn")
+	user, err := UserRepo.GetBySn(sn)
+	if err != nil {
+		common.ErrorMsg(c, http.StatusNotFound, "z-uc-auth: user not found")
+		return
+	}
+
+	var req models.BindPhoneDTO
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ErrorMsg(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// TODO: 验证 SMS 验证码（接入 z-3sp 内部验证接口后补全）
+
+	// 检查手机号是否已被其他用户占用
+	if NamesRepo.Exists(req.Phone) {
+		existing, _ := NamesRepo.GetByLoginName(req.Phone)
+		if existing != nil && existing.UserId != user.Id {
+			common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: phone already bound to another account")
+			return
+		}
+	}
+
+	// 删除该用户旧的 PHONE 类型关联（如果有）
+	oldNames, _ := NamesRepo.GetByUserId(user.Id)
+	for _, n := range oldNames {
+		if n.LoginName == user.Tel {
+			NamesRepo.DeleteByLoginName(n.LoginName)
+		}
+	}
+
+	// 更新 t_user 表
+	if !UserRepo.UpdatePhone(user.Id, req.Phone) {
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: bind phone failed")
+		return
+	}
+
+	// 写入 t_names 表
+	now := NowMs()
+	_, err = internal.Db.Exec("INSERT INTO t_names (login_name, user_id, app_id, create_at) VALUES (?, ?, ?, ?)",
+		req.Phone, user.Id, "", now)
+	if err != nil {
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: bind phone failed")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "phone bound"})
+}
+
+// ── 绑定用户名 ──────────────────────────────────────────
+
+func BindUsername(c *gin.Context) {
+	sn := c.GetString("sn")
+	user, err := UserRepo.GetBySn(sn)
+	if err != nil {
+		common.ErrorMsg(c, http.StatusNotFound, "z-uc-auth: user not found")
+		return
+	}
+
+	var req models.BindUsernameDTO
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ErrorMsg(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// 检查用户名是否已被占用
+	if NamesRepo.Exists(req.Username) {
+		common.ErrorMsg(c, http.StatusBadRequest, "z-uc-auth: username already taken")
+		return
+	}
+
+	// 删除该用户旧的 USERNAME 类型关联
+	if user.Name != "" {
+		NamesRepo.DeleteByLoginName(user.Name)
+	}
+
+	// 更新 t_user 表
+	if !UserRepo.UpdateName(user.Id, req.Username) {
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: bind username failed")
+		return
+	}
+
+	// 写入 t_names 表
+	now := NowMs()
+	_, err = internal.Db.Exec("INSERT INTO t_names (login_name, user_id, app_id, create_at) VALUES (?, ?, ?, ?)",
+		req.Username, user.Id, "", now)
+	if err != nil {
+		common.ErrorMsg(c, http.StatusInternalServerError, "z-uc-auth: bind username failed")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "username bound"})
+}
+
+// ── 注销账号 ──────────────────────────────────────────
+
 func CancelAccount(c *gin.Context) {
 	sn := c.GetString("sn")
 	user, err := UserRepo.GetBySn(sn)
@@ -301,4 +402,3 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
-

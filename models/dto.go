@@ -40,6 +40,15 @@ type ThirdLoginDTO struct {
 	State       string `json:"state"`
 }
 
+type BindPhoneDTO struct {
+	Phone string `json:"phone" binding:"required"`
+	Code  string `json:"code" binding:"required"`
+}
+
+type BindUsernameDTO struct {
+	Username string `json:"username" binding:"required"`
+}
+
 type WxMiniLoginDTO struct {
 	Code     string `json:"code" binding:"required"`
 	AppId    string `json:"appId" binding:"required"`

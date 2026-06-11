@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/fndome/xb"
-	"github.com/zzznow/z-uc/models"
 	"github.com/jmoiron/sqlx"
+	"github.com/zzznow/z-uc/models"
 
 	"github.com/zzznow/z-uc/auth/internal"
 )
@@ -208,6 +208,71 @@ func (r *NamesRepository) DeleteAllByUserId(userId uint64) bool {
 	_, err := internal.Db.Exec("DELETE FROM t_names WHERE user_id = ?", userId)
 	if err != nil {
 		LOGGER.Error("[NamesRepository.DeleteAllByUserId]", "err", err.Error())
+		return false
+	}
+	return true
+}
+
+func (r *UserRepository) GetByTel(tel string) (*models.User, error) {
+	var user models.User
+	sql, vs, _ := xb.Of(&user).Eq("tel", tel).Build().SqlOfSelect()
+	err := internal.Db.Get(&user, sql, vs...)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *UserRepository) UpdatePhone(userId uint64, phone string) bool {
+	var user models.User
+	sql, vs := xb.Of(&user).
+		Update(func(ub *xb.UpdateBuilder) {
+			ub.Set("tel", phone)
+		}).
+		Eq("id", userId).
+		Build().
+		SqlOfUpdate()
+
+	_, err := internal.Db.Exec(sql, vs...)
+	if err != nil {
+		LOGGER.Error("[UserRepository.UpdatePhone]", "err", err.Error())
+		return false
+	}
+	return true
+}
+
+func (r *UserRepository) UpdateName(userId uint64, name string) bool {
+	var user models.User
+	sql, vs := xb.Of(&user).
+		Update(func(ub *xb.UpdateBuilder) {
+			ub.Set("name", name)
+		}).
+		Eq("id", userId).
+		Build().
+		SqlOfUpdate()
+
+	_, err := internal.Db.Exec(sql, vs...)
+	if err != nil {
+		LOGGER.Error("[UserRepository.UpdateName]", "err", err.Error())
+		return false
+	}
+	return true
+}
+
+func (r *NamesRepository) GetByUserId(userId uint64) ([]*models.Names, error) {
+	var names []*models.Names
+	sql, vs, _ := xb.Of(&models.Names{}).Eq("user_id", userId).Build().SqlOfSelect()
+	err := internal.Db.Select(&names, sql, vs...)
+	if err != nil {
+		return nil, err
+	}
+	return names, nil
+}
+
+func (r *NamesRepository) DeleteByUserIdAndType(userId uint64, loginType string) bool {
+	_, err := internal.Db.Exec("DELETE FROM t_names WHERE user_id = ? AND login_name LIKE ?", userId, loginType+":%")
+	if err != nil {
+		LOGGER.Error("[NamesRepository.DeleteByUserIdAndType]", "err", err.Error())
 		return false
 	}
 	return true
