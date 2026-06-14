@@ -1,6 +1,6 @@
 name: "auth"
 mode: "test"
-port: 80
+port: 8088
 host: "0.0.0.0"
 base_url: "http://z-3sp:80"
 mysql:
