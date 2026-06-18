@@ -18,6 +18,7 @@ func RegisterRoutes(r *gin.Engine) {
 	r.POST("/auth/google/token", GoogleToken)
 	r.POST("/auth/wx/token", WxToken)
 	r.POST("/auth/wx-miniapp/token", WxMiniToken)
+	r.POST("/auth/douyin/token", DouyinToken)
 	r.GET("/auth/token/verify", VerifyTokenHandler)
 	r.GET("/auth/info", GetTokenInfo)
 
